@@ -1,6 +1,6 @@
 # This class will generate keytab files for hadoop users, change accordingly to your environment
 
-class hadoop::kerberos {
+class kerberos::hadoop {
   require kerberos::client
 
   $hadoop_mapreduce_framework = "mr1"

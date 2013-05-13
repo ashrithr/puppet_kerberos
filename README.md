@@ -33,3 +33,9 @@ Using with puppet apply (given this module lives in /root/modules):
 ```
 $puppet apply --modulepath=/root/modules -e "include kerberos::server"
 ```
+
+To generate keytab files see example manifest 'hadoop.pp' which will generate keytab files for hadoop users, sample usage:
+
+```
+$puppet apply --modulepath=/root/modules -e "include kerberos::hadoop"
+```
