@@ -8,10 +8,12 @@ This module will install and manage kerberos servers and clients
 Installs fully functional KDC ( kerberos server and admin_server utilities )
 
 ```
-  include kerberos::kdc
-  inlcude kerberos::kdc::admin_server
+include kerberos::kdc
+inlcude kerberos::kdc::admin_server
+
 (or)
-  include kerberos::server
+
+include kerberos::server
 ```
 
 Installs kerberos client:
