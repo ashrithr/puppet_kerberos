@@ -11,7 +11,7 @@ Installs fully functional KDC ( kerberos server and admin_server utilities )
 include kerberos::kdc
 inlcude kerberos::kdc::admin_server
 
-(or)
+#(or)
 
 include kerberos::server
 ```
