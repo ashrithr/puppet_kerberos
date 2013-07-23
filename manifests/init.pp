@@ -42,9 +42,8 @@
 #
 # Installs fully functional KDC ( kerberos server and admin_server utilities )
 #   include kerberos::kdc
-#   inlcude kerberos::kdc::admin_server
 # (or)
-#   *include kerberos::server
+#   *include kerberos::server (which includes client as well)
 #
 # Installs kerberos client
 # *include kerberos::client
@@ -59,7 +58,7 @@ class kerberos {
   class site {
     $domain     = $::domain
     $realm      = inline_template('<%= domain.upcase %>')
-    $kdc_server = $::fqdn
+    $kdc_server = $::fqdn   ######CHANGE ME
     $kdc_port   = 88
     $admin_port = 749
 
@@ -108,16 +107,23 @@ class kerberos {
 
   class kdc inherits kerberos::site {
 
+    $se_hack = "setsebool -P kadmind_disable_trans  1 ; setsebool -P krb5kdc_disable_trans 1"
+
     package { $package_name_kdc:
       ensure => installed,
     }
 
+    package { "$package_name_admin":
+      ensure => installed,
+      require => Package["$package_name_kdc"],
+    }
+
     file { $kdc_etc_path:
     	ensure => directory,
-        owner => root,
-        group => root,
-        mode => "0700",
-        require => Package["$package_name_kdc"],
+      owner => root,
+      group => root,
+      mode => "0700",
+      require => Package["$package_name_kdc"],
     }
 
     file { "${kdc_etc_path}/kdc.conf":
@@ -142,7 +148,7 @@ class kerberos {
       creates => "${kdc_etc_path}/stash",
       subscribe => File["${kdc_etc_path}/kdc.conf"],
       # refreshonly => true,
-      require => [Package["$package_name_kdc"], File["${kdc_etc_path}/kdc.conf"], File["/etc/krb5.conf"]],
+      require => [Package["$package_name_admin"], File["${kdc_etc_path}/kdc.conf"], File["/etc/krb5.conf"]],
     }
 
     service { $service_name_kdc:
@@ -152,22 +158,12 @@ class kerberos {
       hasrestart => true,
     }
 
-
-    class admin_server inherits kerberos::kdc {
-      $se_hack = "setsebool -P kadmind_disable_trans  1 ; setsebool -P krb5kdc_disable_trans 1"
-
-      package { "$package_name_admin":
-        ensure => installed,
-        require => Package["$package_name_kdc"],
-      }
-
-      service { "$service_name_admin":
-        ensure => running,
-        require => [Package["$package_name_admin"], Service["$service_name_kdc"]],
-        hasrestart => true,
-        restart => "${se_hack} ; service ${service_name_admin} restart",
-        start => "${se_hack} ; service ${service_name_admin} start",
-      }
+    service { "$service_name_admin":
+      ensure => running,
+      require => [Package["$package_name_admin"], Service["$service_name_kdc"]],
+      hasrestart => true,
+      restart => "${se_hack} ; service ${service_name_admin} restart",
+      start => "${se_hack} ; service ${service_name_admin} start",
     }
   }
 
@@ -183,10 +179,6 @@ class kerberos {
     include kerberos::client
 
     class { "kerberos::kdc": }
-    ->
-    Class["kerberos::client"]
-
-    class { "kerberos::kdc::admin_server": }
     ->
     Class["kerberos::client"]
   }
@@ -239,7 +231,7 @@ class kerberos {
 
     exec { "ktinject.$title":
       path     => $kerberos::site::exec_path,
-      command  => "/usr/bin/ktutil <<EOF
+      command  => "ktutil <<EOF
         $includes
         wkt $keytab
 EOF
